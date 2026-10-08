@@ -114,6 +114,7 @@ jobs:
           debug: ${{ inputs.debug }}
           nomount: ${{ inputs.nomount }}
           kernel_version_spoof: ${{ inputs.kernel_version_spoof }}
+          kernel_clone_token: ${{ secrets.KERNEL_CLONE_TOKEN }}
 
       - name: Save ccache (local part)
         if: always()

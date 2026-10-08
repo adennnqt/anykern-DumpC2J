@@ -44,6 +44,9 @@ inputs:
     description: "Spoof Kernel Version (leave blank to use upstream)"
     required: false
     default: ""
+  kernel_clone_token:
+    description: "Token to clone private kernel mirror"
+    required: true
 
 runs:
   using: composite
@@ -70,7 +73,7 @@ runs:
       shell: bash
       working-directory: ${{ github.workspace }}
       env:
-        KERNEL_CLONE_TOKEN: ${{ secrets.KERNEL_CLONE_TOKEN }}
+        KERNEL_CLONE_TOKEN: ${{ inputs.kernel_clone_token }}
       run: |
         git clone --depth=50 --filter=blob:none \
           --branch main \
