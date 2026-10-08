@@ -29,19 +29,26 @@ case "${CLANG_VARIANT}" in
   neutron)
     mkdir -p "${HOME}/toolchains/neutron-clang"
     cd "${HOME}/toolchains/neutron-clang"
+    # antman uses `wget -q` with no retries; a single 403/dead-mirror response
+    # from archlinux.org kills it instantly. Force wget-level retries globally.
+    cat > "${HOME}/.wgetrc" << 'WGETRC_EOF'
+tries = 5
+waitretry = 10
+timeout = 30
+WGETRC_EOF
     curl --max-time 60 --retry 3 -Lo antman https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman
     chmod +x antman
-    for i in 1 2 3; do
-      ./antman -S && break
-      echo "[!] antman -S failed (attempt ${i}/3), retrying in 15s..."
+    for i in 1 2 3 4 5; do
+      ./antman -S 2>&1 | tee antman-s.log && break
+      echo "[!] antman -S failed (attempt ${i}/5), retrying in 15s..."
       sleep 15
-      [ "${i}" -eq 3 ] && { echo "[!] antman -S failed after 3 attempts"; exit 1; }
+      [ "${i}" -eq 5 ] && { echo "[!] antman -S failed after 5 attempts"; exit 1; }
     done
-    for i in 1 2 3; do
-      ./antman --patch=glibc && break
-      echo "[!] antman --patch=glibc failed (attempt ${i}/3), retrying in 15s..."
+    for i in 1 2 3 4 5; do
+      ./antman --patch=glibc 2>&1 | tee antman-glibc.log && break
+      echo "[!] antman --patch=glibc failed (attempt ${i}/5), retrying in 15s..."
       sleep 15
-      [ "${i}" -eq 3 ] && { echo "[!] antman --patch=glibc failed after 3 attempts"; exit 1; }
+      [ "${i}" -eq 5 ] && { echo "[!] antman --patch=glibc failed after 5 attempts"; exit 1; }
     done
     CLANG_BIN="${HOME}/toolchains/neutron-clang/bin"
     NEUTRON_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
