@@ -84,11 +84,6 @@ on:
         required: true
         type: boolean
         default: false
-      autopost_channel:
-        description: "Autopost files + announcement to main channel"
-        required: true
-        type: boolean
-        default: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -180,65 +175,11 @@ jobs:
           retention-days: 1
 
       - name: Notify Telegram
-        if: success() && !inputs.autopost_channel
+        if: success()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: bash builder/scripts/notify_telegram.sh
-
-      - name: Post to Channel
-        if: success() && inputs.autopost_channel
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-          KERNEL_DIR: ${{ github.workspace }}/kernel-source
-          VARIANT: ${{ env.INPUT_VARIANT }}
-          ROOT: ${{ env.INPUT_ROOT }}
-        run: bash builder/scripts/notify_channel.sh
-
-      - name: Upload variant meta
-        if: success() && inputs.autopost_channel
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: variant-link-${{ matrix.variant }}-${{ matrix.root }}
-          path: variant_meta.json
-          retention-days: 1
-
-  publish_announcement:
-    name: "Publish Announcement"
-    needs: build
-    if: ${{ success() && inputs.autopost_channel }}
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout Builder
-        uses: actions/checkout@v4
-        with:
-          path: builder
-          fetch-depth: 0
-
-      - name: Clone Kernel Source
-        env:
-          KERNEL_CLONE_TOKEN: ${{ secrets.KERNEL_CLONE_TOKEN }}
-        run: |
-          git clone --depth=50 --filter=blob:none \
-            --branch main \
-            https://x-access-token:${KERNEL_CLONE_TOKEN}@github.com/adennnqt/DumpC2J-Mirror-6.6.git \
-            kernel-source
-
-      - name: Download variant links
-        uses: actions/download-artifact@v4
-        with:
-          pattern: variant-link-*
-          path: variant-links
-
-      - name: Publish announcement
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-          KERNEL_DIR: ${{ github.workspace }}/kernel-source
-          LINKS_DIR: ${{ github.workspace }}/variant-links
-        run: bash builder/scripts/publish_announcement.sh
 
   merge_ccache:
     name: "Merge & Publish ccache"
