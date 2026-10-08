@@ -76,7 +76,7 @@ runs:
         KERNEL_CLONE_TOKEN: ${{ inputs.kernel_clone_token }}
       run: |
         git clone --depth=50 --filter=blob:none \
-          --branch main \
+          --branch android14-6.6 \
           https://x-access-token:${KERNEL_CLONE_TOKEN}@github.com/adennnqt/DumpC2J-Mirror-6.6.git \
           kernel-source
 
