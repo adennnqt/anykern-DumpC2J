@@ -118,13 +118,20 @@ static int kernel_umount_feature_set(u64 value)\
     fi
 
     # [FIX] selinux/rules.c — duplicate 'pol'/'old_pol' declaration
-    # Line 154 declares 'struct selinux_policy *pol, *old_pol;' but the
-    # >=5.10 block (line 162) re-declares them, causing compile error.
+    # 70fa0e09: line 154 declares 'struct selinux_policy *pol, *old_pol;'
+    # then the >=5.10 block (line 162) re-declares them with an initializer →
+    # "redefinition of 'pol'". Comment only the outer plain declaration and
+    # keep the assigning one (it is the ONLY declaration in known-good
+    # b20dee70, so it must never be deleted — see note at end of this script).
+    # Guard: only touch line 154 if it is exactly that declaration.
     RULES_C="$KSU_KERNEL/selinux/rules.c"
     if [ -f "$RULES_C" ] && grep -q "struct selinux_policy \*pol, \*old_pol;" "$RULES_C" 2>/dev/null; then
-        # Comment out the first declaration at line ~154, keep the one inside #if block
-        sed -i '154s/struct selinux_policy \*pol, \*old_pol;/\/\/ struct selinux_policy \*pol, \*old_pol;/' "$RULES_C"
-        echo "[SUSFS-Fixup] rules.c: Commented duplicate pol/old_pol declaration"
+        if [ "$(sed -n '154p' "$RULES_C" | tr -d '[:space:]')" = "structselinux_policy*pol,*old_pol;" ]; then
+            sed -i '154s/struct selinux_policy \*pol, \*old_pol;/\/\/ struct selinux_policy *pol, *old_pol;/' "$RULES_C"
+            echo "[SUSFS-Fixup] rules.c: Commented duplicate pol/old_pol declaration"
+        else
+            echo "[SUSFS-Fixup] rules.c: plain pol/old_pol decl not at expected line 154 — left untouched"
+        fi
     fi
 
     # [FIX] include/arch.h — missing upstream, copied from KernelSU
@@ -2028,17 +2035,10 @@ if [ -f "$BRIDGE_C" ] && grep -q "} else if (ksu_su_compat_enabled) {" "$BRIDGE_
     echo "[SUSFS-Fixup] syscall_event_bridge.c: Guarded ksu_handle_execve_sucompat call site for SUSFS"
 fi
 
-# --------------------------------------------------------------------------
-# [GLOBAL] selinux/rules.c — drop duplicate pol/old_pol declaration
-# apply_kernelsu_rules() declares `struct selinux_policy *pol, *old_pol;`
-# at function scope, then re-declares `struct selinux_policy *pol,
-# *old_pol = selinux_state.policy;` inside the
-# `#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)` block (SukiSU
-# commit 70fa0e09) → "redefinition of 'pol'" / "'old_pol'". The inner line
-# is the one that assigns selinux_state.policy; the outer plain declaration
-# is kept. Target the exact assigning line (unique in the file).
-# Placed here (after RULES_C is set at line 174) so the variable exists.
-if [ -f "$RULES_C" ] && grep -q 'struct selinux_policy \*pol, \*old_pol = selinux_state.policy;' "$RULES_C" 2>/dev/null; then
-    sed -i '/struct selinux_policy \*pol, \*old_pol = selinux_state.policy;/d' "$RULES_C"
-    echo "[SUSFS-Fixup] selinux/rules.c: Removed duplicate pol/old_pol declaration"
-fi
+# NOTE: do NOT add a second fixup here that deletes the
+# `struct selinux_policy *pol, *old_pol = selinux_state.policy;` line.
+# The sukisu-scoped fixup at the top of this script already comments out the
+# outer plain declaration (line ~154) for 70fa0e09, and in known-good
+# b20dee70 that assigning line is the ONLY declaration — deleting it (as a
+# previous version of this block did) strips pol/old_pol entirely and the
+# build dies with "use of undeclared identifier".
