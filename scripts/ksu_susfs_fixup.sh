@@ -1524,7 +1524,50 @@ fix_ksu_late_loaded() {
 # the extern reference and always use the local implementation.
 SELINUX_HIDE_C="$KSU_KERNEL/feature/selinux_hide.c"
 if [ "$MANAGER" = "sukisu" ]; then
-    echo "[SUSFS-Fixup] selinux_hide.c: Skipping shared context_struct_compute_av_fn fixup for sukisu (handled/skipped entirely by fix_dirty_sepolicy guard)"
+    # sukisu builds selinux_hide.c via ksu.c unity #include (the Kbuild/Makefile
+    # exclusion above never matches), and fix_dirty_sepolicy is skipped for
+    # sukisu, so the undefined *_fn references MUST be stripped here or the
+    # link dies with "undefined symbol: context_struct_compute_av_fn".
+    # sukisu uses the (void *)fn != NULL guard shape, so the sed below does
+    # not match it — use python (same pattern as other fixups in this script).
+    if [ -f "$SELINUX_HIDE_C" ] && grep -q "context_struct_compute_av_fn\|security_dump_masked_av_fn" "$SELINUX_HIDE_C" 2>/dev/null; then
+        python3 -c "
+import re, sys
+
+path = '$SELINUX_HIDE_C'
+with open(path, 'r') as f:
+    src = f.read()
+
+# Drop the multi-line extern declarations
+src = re.sub(r'extern void context_struct_compute_av_fn\s*\(.*?\);', '', src, flags=re.S)
+src = re.sub(r'extern void security_dump_masked_av_fn\s*\(.*?\);', '', src, flags=re.S)
+
+# Collapse 'if ((void *)fn != NULL) { fn(...); } else { local(...); }'
+# (and the plain 'if (fn) {' shape) into the direct local call
+src = re.sub(
+    r'if\s*\(\s*(?:\(void\s*\*\)\s*)?context_struct_compute_av_fn\s*(?:!=\s*NULL)?\s*\)\s*\{\s*'
+    r'context_struct_compute_av_fn\s*\(.*?\);\s*\}\s*else\s*\{\s*'
+    r'(context_struct_compute_av\s*\(.*?\);)\s*\}',
+    r'\1', src, flags=re.S)
+
+# Drop the security_dump_masked_av_fn conditional call (debug audit only).
+# Two shapes: braceless 'if (c) fn(...);' and braced 'if (c) { fn(...); }'.
+src = re.sub(
+    r'if\s*\(\s*(?:\(void\s*\*\)\s*)?security_dump_masked_av_fn\s*(?:!=\s*NULL)?\s*\)\s*\{[^{}]*security_dump_masked_av_fn\s*\([^{}]*\);\s*\}',
+    '', src, flags=re.S)
+src = re.sub(
+    r'if\s*\(\s*(?:\(void\s*\*\)\s*)?security_dump_masked_av_fn\s*(?:!=\s*NULL)?\s*\)[^{};]*security_dump_masked_av_fn\s*\([^{}]*\);',
+    '', src, flags=re.S)
+
+with open(path, 'w') as f:
+    f.write(src)
+"
+        if grep -q "context_struct_compute_av_fn\|security_dump_masked_av_fn" "$SELINUX_HIDE_C" 2>/dev/null; then
+            echo "[SUSFS-Fixup] ERROR: undefined *_fn references remain in selinux_hide.c after fixup" >&2
+            exit 1
+        fi
+        echo "[SUSFS-Fixup] selinux_hide.c: Removed undefined context_struct_compute_av_fn and security_dump_masked_av_fn (sukisu)"
+    fi
 elif [ -f "$SELINUX_HIDE_C" ] && grep -q "context_struct_compute_av_fn\|security_dump_masked_av_fn" "$SELINUX_HIDE_C" 2>/dev/null; then
     # Remove the extern declarations (multi-line)
     sed -i '/^extern void context_struct_compute_av_fn/,/struct extended_perms \*xperms);/d' "$SELINUX_HIDE_C"
