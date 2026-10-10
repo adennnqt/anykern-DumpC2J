@@ -30,7 +30,7 @@ case "$VARIANT" in
   susfs)
     case "$ROOT" in
       sukisu)   BUILD_LABEL="SUKISU-SUSFS" ;;
-      resukisu) BUILD_LABEL="RESUKI-SUSFS" ;;
+      bakasu) BUILD_LABEL="BAKASU-SUSFS" ;;
       ksu-next) BUILD_LABEL="KSUN-SUSFS" ;;
       *)        BUILD_LABEL="$(tr '[:lower:]' '[:upper:]' <<< "${ROOT}")-SUSFS" ;;
     esac

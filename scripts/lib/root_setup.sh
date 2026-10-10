@@ -5,9 +5,9 @@ case "$ROOT" in
   sukisu)   ROOT_REPO="https://github.com/sukisu-ultra/sukisu-ultra.git"; REPO_NAME="sukisu-ultra"
             if [ "$VARIANT" == "susfs" ]; then BRANCH="builtin"; PIN_KEY="sukisu_susfs"; PIN_PREFIX="SUKISU_SUSFS"
             else BRANCH="main"; PIN_KEY="sukisu_root"; PIN_PREFIX="SUKISU_ROOT"; fi ;;
-  resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main"
-            if [ "$VARIANT" == "susfs" ]; then PIN_KEY="resukisu_susfs"; PIN_PREFIX="RESUKISU_SUSFS"
-            else PIN_KEY="resukisu_root"; PIN_PREFIX="RESUKISU_ROOT"; fi ;;
+  bakasu) ROOT_REPO="https://github.com/Baka-SU/BakaSU.git"; REPO_NAME="BakaSU"; BRANCH="main"
+            if [ "$VARIANT" == "susfs" ]; then PIN_KEY="bakasu_susfs"; PIN_PREFIX="BAKASU_SUSFS"
+            else PIN_KEY="bakasu_root"; PIN_PREFIX="BAKASU_ROOT"; fi ;;
   ksu-next)
     if [ "$VARIANT" == "susfs" ]; then
       ROOT_REPO="https://github.com/pershoot/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev-susfs"
@@ -105,7 +105,7 @@ else
 #include <asm\/current.h>' "$SUSFS_DEF_H"
     fi
 
-    if grep -q "KSU_SUSFS" "$MODULES_DIR/$REPO_NAME/kernel/Kconfig" 2>/dev/null || [ "$ROOT" == "sukisu" ] || [ "$ROOT" == "resukisu" ]; then
+    if grep -q "KSU_SUSFS" "$MODULES_DIR/$REPO_NAME/kernel/Kconfig" 2>/dev/null || [ "$ROOT" == "sukisu" ] || [ "$ROOT" == "bakasu" ]; then
       echo "[+] $REPO_NAME already has native SUSFS integration. Skipping patch..."
     else
       echo "[+] Patching $REPO_NAME for SUSFS..."

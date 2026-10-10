@@ -152,11 +152,11 @@ case "$ROOT" in
       scout_track "sukisu_root" "SUKISU_ROOT"
     fi
     ;;
-  resukisu)
+  bakasu)
     if [ "$VARIANT" == "susfs" ]; then
-      scout_track "resukisu_susfs" "RESUKISU_SUSFS"
+      scout_track "bakasu_susfs" "BAKASU_SUSFS"
     else
-      scout_track "resukisu_root" "RESUKISU_ROOT"
+      scout_track "bakasu_root" "BAKASU_ROOT"
     fi
     ;;
   ksu-next)

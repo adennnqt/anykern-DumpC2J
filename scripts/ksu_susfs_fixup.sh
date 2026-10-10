@@ -6,7 +6,7 @@
 # which may partially fail on different KernelSU forks.
 #
 # Supported managers: KernelSU-Next, Sukisu-Ultra
-# (ReSukiSU has native SUSFS — should be skipped upstream in build.sh)
+# (BakaSU has native SUSFS — should be skipped upstream in build.sh)
 #
 # Usage: ksu_susfs_fixup.sh <path-to-ksu/kernel> [manager-name]
 #   manager-name: ksu-next | sukisu (auto-detected if omitted)
@@ -37,7 +37,7 @@ detect_manager() {
             kowsu)     echo "kowsu" ;;
             sukisu)    echo "sukisu" ;;
             yukisu)    echo "yukisu" ;;
-            resukisu)  echo "resukisu" ;;
+            bakasu)  echo "bakasu" ;;
             apatch)    echo "apatch" ;;
             folkpatch) echo "folkpatch" ;;
             *)         echo "unknown" ;;
@@ -50,7 +50,7 @@ detect_manager() {
         url=$(git -C "$parent" remote get-url origin 2>/dev/null || true)
         case "$url" in
             *KernelSU-Next*|*kernelsu-next*) echo "ksu-next"; return ;;
-            *ReSukiSU*|*resukisu*)           echo "resukisu"; return ;;
+            *BakaSU*|*bakasu*|*Baka-SU*|*ReSukiSU*|*resukisu*) echo "bakasu"; return ;;
             *sukisu*|*SukiSU*|*Sukisu*)      echo "sukisu"; return ;;
             *YukiSU*|*yukisu*)               echo "yukisu"; return ;;
         esac
@@ -248,8 +248,8 @@ ARCH_H_EOF
     fi
 fi
 
-if [ "$MANAGER" = "resukisu" ]; then
-    echo "[SUSFS-Fixup] ReSukiSU has native SUSFS — applying typo fix."
+if [ "$MANAGER" = "bakasu" ]; then
+    echo "[SUSFS-Fixup] BakaSU has native SUSFS — applying typo fix."
     if [ -f "$KSU_KERNEL/runtime/ksud_integration.c" ]; then
         sed -i 's/ksu_init_rc_hook_key_false/ksu_is_init_rc_hook_enabled/g' "$KSU_KERNEL/runtime/ksud_integration.c"
     fi
@@ -274,7 +274,7 @@ if [ "$MANAGER" = "resukisu" ]; then
         echo "[SUSFS-Fixup] selinux_hide.c: Removed undefined context_struct_compute_av_fn"
     fi
     # [FIX] sucompat.c + kernel_umount.c — ksu_ vs susfs_ prefix mismatch
-    # ReSukiSU uses ksu_is_current_proc_umounted / ksu_set_current_proc_umounted
+    # BakaSU uses ksu_is_current_proc_umounted / ksu_set_current_proc_umounted
     # but SUSFS v2.1 defines them as susfs_is_current_proc_umounted / susfs_set_current_proc_umounted
     for _f in "$KSU_KERNEL/feature/sucompat.c" "$KSU_KERNEL/feature/kernel_umount.c"; do
         if [ -f "$_f" ]; then
@@ -325,7 +325,7 @@ KERNEL_UMOUNT_C="$KSU_KERNEL/feature/kernel_umount.c"
 # su_fd = ksu_install_su_fd() from the sucompat handler) and instead calls
 # ksu_install_su_fd() directly from fs/exec.c after a successful su exec.
 # Forks that do not implement the KSU_DRIVER_PERMISSION_SU_SESSION mechanism
-# (e.g. ReSukiSU / SukiSU-Ultra) therefore fail to link with:
+# (e.g. BakaSU / SukiSU-Ultra) therefore fail to link with:
 #   ld.lld: error: undefined symbol: ksu_install_su_fd
 # Provide a no-op stub (returning success, no fd) only when the fork lacks it.
 if [ -f "$SUPERCALL_C" ] && ! grep -q "ksu_install_su_fd" "$SUPERCALL_C" 2>/dev/null; then
@@ -393,7 +393,7 @@ fi
 # ==========================================================================
 # [SHARED] selinux/rules.c — susfs SID init calls
 # ==========================================================================
-if [ "$MANAGER" != "resukisu" ] && [ -f "$RULES_C" ] && ! grep -q "susfs_set_zygote_sid" "$RULES_C" 2>/dev/null; then
+if [ "$MANAGER" != "bakasu" ] && [ -f "$RULES_C" ] && ! grep -q "susfs_set_zygote_sid" "$RULES_C" 2>/dev/null; then
     if grep -q "susfs_set_batch_sid" "$RULES_C" 2>/dev/null; then
         echo "[SUSFS-Fixup] selinux/rules.c: Using modern susfs_set_batch_sid"
     else
@@ -1609,7 +1609,7 @@ fix_dirty_sepolicy() {
     for candidate in \
         "$(dirname "$0")/.root_modules/KernelSU-Next" \
         "$(dirname "$0")/.root_modules/sukisu-ultra" \
-        "$(dirname "$0")/.root_modules/ReSukiSU"; do
+        "$(dirname "$0")/.root_modules/BakaSU"; do
         if [ -d "$candidate/.git" ] && [ -f "$candidate/kernel/feature/selinux_hide.c" ]; then
             KSU_GIT_DIR="$candidate"
             break
@@ -1813,7 +1813,7 @@ fix_context_struct_compute_av_link() {
 # fix_context_struct_compute_av_link  # disabled - sed replacement causes bash syntax errors
 
 case "$MANAGER" in
-    resukisu|sukisu|yukisu)
+    bakasu|sukisu|yukisu)
         fix_sulog_type_mismatch
         fix_execveat_handlers
         fix_faccessat_signature

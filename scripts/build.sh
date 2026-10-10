@@ -33,7 +33,7 @@ LIB_ORDER=(
   branding.sh
   baseband_guard.sh
   rekernel.sh
-  resukisu_fixes.sh
+  bakasu_fixes.sh
   clang_flags.sh
   kconfig.sh
   compile.sh

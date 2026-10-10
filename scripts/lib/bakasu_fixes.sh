@@ -1,20 +1,20 @@
 #!/bin/bash
 set -e
 
-if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" == "susfs" ]; then
+if [ "$ROOT" == "bakasu" ] && [ "$VARIANT" == "susfs" ]; then
   KSUD_INT="$MODULES_DIR/$REPO_NAME/kernel/runtime/ksud_integration.c"
   if [ -f "$KSUD_INT" ]; then
     sed -i 's/ksu_init_rc_hook_key_false/ksu_is_init_rc_hook_enabled/g' "$KSUD_INT"
     grep -qF "ksu_is_init_rc_hook_enabled" "$KSUD_INT" \
-      || error "resukisu_fixes: sed failed to patch ksud_integration.c — old symbol not found, upstream may have changed"
-    echo "[*] ReSukiSU: fixed ksu_init_rc_hook_key_false typo"
+      || error "bakasu_fixes: sed failed to patch ksud_integration.c — old symbol not found, upstream may have changed"
+    echo "[*] BakaSU: fixed ksu_init_rc_hook_key_false typo"
   fi
 
   SUCOMPAT_IMPL="$MODULES_DIR/$REPO_NAME/kernel/feature/sucompat_proc_flag.c"
   SUCOMPAT_KBUILD="$MODULES_DIR/$REPO_NAME/kernel/Kbuild"
-  [ -f "$SUCOMPAT_KBUILD" ] || error "resukisu_fixes: Kbuild not found in $SUCOMPAT_KBUILD — ReSukiSU upstream layout may have changed"
+  [ -f "$SUCOMPAT_KBUILD" ] || error "bakasu_fixes: Kbuild not found in $SUCOMPAT_KBUILD — BakaSU upstream layout may have changed"
   if ! grep -qF "feature/sucompat_proc_flag.o" "$SUCOMPAT_KBUILD"; then
-    echo "[*] Generating sucompat_proc_flag.c for ReSukiSU susfs LTO fix..."
+    echo "[*] Generating sucompat_proc_flag.c for BakaSU susfs LTO fix..."
     cat > "$SUCOMPAT_IMPL" << 'SCEOF'
 #include <linux/types.h>
 #include <linux/thread_info.h>

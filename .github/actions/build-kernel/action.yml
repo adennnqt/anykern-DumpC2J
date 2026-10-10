@@ -6,7 +6,7 @@ inputs:
     description: "Build variant (stock|susfs|root)"
     required: true
   root:
-    description: "Root method (none|sukisu|resukisu|ksu-next)"
+    description: "Root method (none|sukisu|bakasu|ksu-next)"
     required: true
   hz:
     description: "Refresh Rate (HZ)"

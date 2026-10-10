@@ -9,7 +9,7 @@
       "70fa0e092a2c81060823f8ae526eac14fdda2930"
     ]
   },
-  "resukisu_susfs": {
+  "bakasu_susfs": {
     "good": "8450dd287ef6ee25ca2b6b858b43c9354c73060c",
     "bad": [
       "052ca27775cc9c8570e3b1ba3db7c29486d6020e",
@@ -29,7 +29,7 @@
     "manual": true,
     "bad": []
   },
-  "resukisu_root": {
+  "bakasu_root": {
     "good": "052ca27775cc9c8570e3b1ba3db7c29486d6020e",
     "bad": []
   }

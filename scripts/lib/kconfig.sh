@@ -18,7 +18,7 @@ case "$VARIANT" in
     -e CONFIG_KSU -e CONFIG_KSU_SUSFS -e CONFIG_KSU_SUSFS_SUS_MAP ;;
 esac
 
-if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" != "stock" ]; then
+if [ "$ROOT" == "bakasu" ] && [ "$VARIANT" != "stock" ]; then
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -e CONFIG_KSU_MULTI_MANAGER_SUPPORT
 fi
 

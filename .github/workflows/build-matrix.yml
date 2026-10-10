@@ -40,8 +40,8 @@ on:
         required: true
         type: boolean
         default: true
-      combo_susfs_resukisu:
-        description: "SUSFS - ReSukiSU"
+      combo_susfs_bakasu:
+        description: "SUSFS - BakaSU"
         required: true
         type: boolean
         default: true
@@ -100,7 +100,7 @@ jobs:
         env:
           COMBO_STOCK: ${{ inputs.combo_stock }}
           COMBO_SUSFS_SUKISU: ${{ inputs.combo_susfs_sukisu }}
-          COMBO_SUSFS_RESUKISU: ${{ inputs.combo_susfs_resukisu }}
+          COMBO_SUSFS_BAKASU: ${{ inputs.combo_susfs_bakasu }}
           COMBO_SUSFS_KSUNEXT: ${{ inputs.combo_susfs_ksunext }}
         run: |
           python3 -c "
@@ -109,7 +109,7 @@ jobs:
           combos = [
               ('COMBO_STOCK', 'stock', 'none'),
               ('COMBO_SUSFS_SUKISU', 'susfs', 'sukisu'),
-              ('COMBO_SUSFS_RESUKISU', 'susfs', 'resukisu'),
+              ('COMBO_SUSFS_BAKASU', 'susfs', 'bakasu'),
               ('COMBO_SUSFS_KSUNEXT', 'susfs', 'ksu-next'),
           ]
 
