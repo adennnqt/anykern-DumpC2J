@@ -125,7 +125,8 @@ static int kernel_umount_feature_set(u64 value)\
     # b20dee70, so it must never be deleted — see note at end of this script).
     # Guard: only touch line 154 if it is exactly that declaration.
     RULES_C="$KSU_KERNEL/selinux/rules.c"
-    if [ -f "$RULES_C" ] && grep -q "struct selinux_policy \*pol, \*old_pol;" "$RULES_C" 2>/dev/null; then
+    if [ -f "$RULES_C" ] && grep -q "struct selinux_policy \*pol, \*old_pol;" "$RULES_C" 2>/dev/null \
+        && grep -q "struct selinux_policy \*pol, \*old_pol = selinux_state.policy;" "$RULES_C" 2>/dev/null; then
         if [ "$(sed -n '154p' "$RULES_C" | tr -d '[:space:]')" = "structselinux_policy*pol,*old_pol;" ]; then
             sed -i '154s/struct selinux_policy \*pol, \*old_pol;/\/\/ struct selinux_policy *pol, *old_pol;/' "$RULES_C"
             echo "[SUSFS-Fixup] rules.c: Commented duplicate pol/old_pol declaration"
