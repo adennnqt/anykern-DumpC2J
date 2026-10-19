@@ -7,6 +7,31 @@ for img in Image.gz-dtb Image.gz Image; do
 done
 [ "$IMAGE_FOUND" == "0" ] && { warn "No kernel image found!"; return 1; }
 
+# --- KPM: patch the raw Image with KernelPatch (SukiSU stubs get hooked at boot) ---
+if [ "$ROOT" == "sukisu" ] && [ "$VARIANT" != "stock" ]; then
+  if [ -z "$KPM_SUPERKEY" ]; then
+    KPM_SUPERKEY=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 16)
+    echo "[!] KPM_SUPERKEY secret not set, using a random one (not shown in log)"
+  fi
+  echo "::add-mask::$KPM_SUPERKEY"
+  KPM_DIR="${GITHUB_WORKSPACE}/kpm_tools"; mkdir -p "$KPM_DIR"
+  KPM_BASE="https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/latest/download"
+  curl -fLSs -o "$KPM_DIR/kptools-linux" "$KPM_BASE/kptools-linux" || { warn "kptools download failed"; return 1; }
+  curl -fLSs -o "$KPM_DIR/kpimg" "$KPM_BASE/kpimg" || { warn "kpimg download failed"; return 1; }
+  chmod +x "$KPM_DIR/kptools-linux"
+
+  KPM_RAW="$ZIMAGE_DIR/Image"
+  [ -f "$KPM_RAW" ] || gzip -dk "$ZIMAGE_DIR/Image.gz" || { warn "No Image for KPM patch"; return 1; }
+  cp "$KPM_RAW" "$KPM_RAW.orig"
+  "$KPM_DIR/kptools-linux" -p -i "$KPM_RAW.orig" -S "$KPM_SUPERKEY" -k "$KPM_DIR/kpimg" -o "$KPM_RAW" \
+    || { warn "KPM patching failed"; return 1; }
+  rm -f "$KPM_RAW.orig"
+  # package loop prefers Image.gz-dtb / Image.gz, so refresh them from the patched Image
+  [ -f "$ZIMAGE_DIR/Image.gz" ] && gzip -nkf "$KPM_RAW"
+  rm -f "$ZIMAGE_DIR/Image.gz-dtb"
+  echo "[+] KPM patch applied"
+fi
+
 : "${BUILD_START:?BUILD_START not set — check sourcing order}"
 TEMP_DIR="${GITHUB_WORKSPACE}/anykernel_temp"
 rm -rf "$TEMP_DIR"

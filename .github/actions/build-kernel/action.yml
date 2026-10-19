@@ -44,6 +44,10 @@ inputs:
     description: "Spoof Kernel Version (leave blank to use upstream)"
     required: false
     default: ""
+  kpm_superkey:
+    description: "KPM SuperKey (optional; random if empty)"
+    required: false
+    default: ""
   kernel_clone_token:
     description: "Token to clone private kernel mirror"
     required: true
@@ -237,5 +241,6 @@ runs:
         INPUT_LTO: ${{ inputs.lto }}
         INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
         GH_TOKEN: ${{ github.token }}
+        KPM_SUPERKEY: ${{ inputs.kpm_superkey }}
       run: |
         bash builder/scripts/build.sh

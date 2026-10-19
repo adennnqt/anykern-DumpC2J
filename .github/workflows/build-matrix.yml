@@ -160,6 +160,7 @@ jobs:
           nomount: ${{ inputs.nomount }}
           kernel_version_spoof: ${{ inputs.kernel_version_spoof }}
           kernel_clone_token: ${{ secrets.KERNEL_CLONE_TOKEN }}
+          kpm_superkey: ${{ secrets.KPM_SUPERKEY }}
 
       - name: Save ccache (local part)
         if: always()
