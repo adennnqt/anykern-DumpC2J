@@ -4,9 +4,11 @@
     "bad": []
   },
   "sukisu_susfs": {
-    "good": "b20dee702035af09cb2ecb5f35443bbc1747f3e6",
+    "good": "5ef32ad5d5eba3033f86467fd4fa094e032c5237",
     "bad": [
-      "70fa0e092a2c81060823f8ae526eac14fdda2930"
+      "70fa0e092a2c81060823f8ae526eac14fdda2930",
+      "579903be12819cc7b4cfdf27740e4e76e81d25cb",
+      "05f5cdf082d32bbc651c205ba4bdd1dc66cca7f5"
     ]
   },
   "bakasu_susfs": {
