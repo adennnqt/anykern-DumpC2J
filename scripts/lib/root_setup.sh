@@ -75,14 +75,30 @@ else
     [ -z "$SUSFS_TARGET_SHA" ] && { warn "${SUSFS_REF_VAR} is empty — scout.sh not run or failed to resolve."; return 1; }
 
     if [ ! -d "$SUSFS_DIR" ]; then
-      local clone_ok=0
-      for attempt in 1 2 3; do
-        timeout 120 git clone "$SUSFS_REPO_URL" -b "$SUSFS_BRANCH" "$SUSFS_DIR" && { clone_ok=1; break; }
-        echo "[!] SUSFS clone failed (attempt ${attempt}/3), retrying in 30s..."
+      # gitlab.com sporadically drops connections / returns "unable to handle
+      # this request due to load". Fetch ONLY the pinned commit (tiny), fall
+      # back to a shallow branch clone, and back off longer between attempts.
+      local clone_ok=0 max_attempts=6
+      for attempt in $(seq 1 "$max_attempts"); do
         rm -rf "$SUSFS_DIR" 2>/dev/null
-        sleep 30
+        if mkdir -p "$SUSFS_DIR" \
+           && git -C "$SUSFS_DIR" init -q \
+           && git -C "$SUSFS_DIR" remote add origin "$SUSFS_REPO_URL" \
+           && timeout 180 git -c http.version=HTTP/1.1 -C "$SUSFS_DIR" fetch --depth 1 --no-tags origin "$SUSFS_TARGET_SHA"; then
+          clone_ok=1; break
+        fi
+        echo "[!] SUSFS pinned-sha fetch failed (attempt ${attempt}/${max_attempts}), trying shallow branch clone..."
+        rm -rf "$SUSFS_DIR" 2>/dev/null
+        if timeout 180 git -c http.version=HTTP/1.1 clone --depth 50 --no-tags "$SUSFS_REPO_URL" -b "$SUSFS_BRANCH" "$SUSFS_DIR"; then
+          clone_ok=1; break
+        fi
+        if [ "$attempt" -lt "$max_attempts" ]; then
+          echo "[!] SUSFS clone failed (attempt ${attempt}/${max_attempts}), retrying in $((attempt * 30))s..."
+          rm -rf "$SUSFS_DIR" 2>/dev/null
+          sleep $((attempt * 30))
+        fi
       done
-      [ "$clone_ok" -eq 0 ] && { echo "[-] SUSFS clone failed after 3 attempts"; return 1; }
+      [ "$clone_ok" -eq 0 ] && { echo "[-] SUSFS clone failed after ${max_attempts} attempts"; return 1; }
     else
       local fetch_ok=0
       for attempt in 1 2 3; do

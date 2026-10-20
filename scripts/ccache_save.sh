@@ -6,6 +6,14 @@ if [ -z "${CCACHE_ASSET:-}" ] || [ ! -d "${GITHUB_WORKSPACE}/.ccache" ]; then
   exit 0
 fi
 
+# Never publish an (almost) empty cache: a failed build that never compiled
+# anything would --clobber the good cache stored in the release.
+CCACHE_FILES=$(find "${GITHUB_WORKSPACE}/.ccache" -type f 2>/dev/null | wc -l)
+if [ "$CCACHE_FILES" -lt 100 ]; then
+  echo "[!] ccache has only ${CCACHE_FILES} files — build likely failed before compiling. Skipping save so the stored cache is not overwritten."
+  exit 0
+fi
+
 echo "[+] ccache stats after build:"
 ccache -s -v
 
