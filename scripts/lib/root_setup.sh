@@ -45,7 +45,14 @@ else
 
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
     echo "[+] Cloning $REPO_NAME (full history, for fallback)..."
-    timeout 90 git clone -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME" || { echo "[-] Root method clone failed/timed out"; return 1; }
+    root_clone_ok=0
+    for attempt in 1 2 3; do
+      rm -rf "$MODULES_DIR/$REPO_NAME"
+      timeout 300 git clone -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME" && { root_clone_ok=1; break; }
+      echo "[!] Root method clone failed (attempt ${attempt}/3), retrying in 20s..."
+      sleep 20
+    done
+    [ "$root_clone_ok" -eq 0 ] && { echo "[-] Root method clone failed/timed out"; return 1; }
   else
     echo "[+] Fetching $REPO_NAME..."
     (cd "$MODULES_DIR/$REPO_NAME" && timeout 60 git fetch origin "$BRANCH") || { echo "[-] Root method fetch failed/timed out"; return 1; }
