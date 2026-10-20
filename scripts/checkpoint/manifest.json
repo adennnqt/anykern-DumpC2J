@@ -7,8 +7,7 @@
     "good": "b20dee702035af09cb2ecb5f35443bbc1747f3e6",
     "bad": [
       "70fa0e092a2c81060823f8ae526eac14fdda2930"
-    ],
-    "manual": true
+    ]
   },
   "bakasu_susfs": {
     "good": "8450dd287ef6ee25ca2b6b858b43c9354c73060c",
